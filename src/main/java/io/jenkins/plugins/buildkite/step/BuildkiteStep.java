@@ -1,4 +1,4 @@
-package io.jenkins.plugins.buildkite;
+package io.jenkins.plugins.buildkite.step;
 
 import hudson.Extension;
 import hudson.model.Run;
