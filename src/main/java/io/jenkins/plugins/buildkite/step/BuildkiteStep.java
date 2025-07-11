@@ -27,7 +27,7 @@ public class BuildkiteStep extends Step {
     }
 
     @Override
-    public StepExecution start(StepContext context) throws Exception {
+    public StepExecution start(StepContext context) {
         return new BuildkiteStepExecution(this, context);
     }
 

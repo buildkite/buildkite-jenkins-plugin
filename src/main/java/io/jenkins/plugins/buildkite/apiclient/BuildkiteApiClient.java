@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hudson.util.Secret;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
@@ -13,9 +14,10 @@ import org.apache.hc.core5.http.io.entity.StringEntity;
 import java.io.IOException;
 
 public class BuildkiteApiClient {
-    private static final ObjectMapper MAPPER = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    private static final String BUILDKITE_API_BASE = "http://api.buildkite.localhost/v2";
+    private static final String BUILDKITE_API_BASE = "https://api.buildkite.com/v2";
     private Secret apiToken;
     private CloseableHttpClient httpClient;
 
@@ -24,7 +26,7 @@ public class BuildkiteApiClient {
         this.httpClient = HttpClient.getCloseableHttpClient();
     }
 
-    public BuildkiteBuild createBuild(String organization, String pipeline, CreateBuildRequest request) {
+    public BuildkiteBuild createBuild(String organization, String pipeline, CreateBuildRequest createBuildRequest) {
         var url = String.format(
                 "%s/organizations/%s/pipelines/%s/builds",
                 BUILDKITE_API_BASE,
@@ -32,27 +34,55 @@ public class BuildkiteApiClient {
                 pipeline
         );
 
-        var post = new HttpPost(url);
-        post.setHeader("Authorization", "Bearer " + this.apiToken.getPlainText());
-        post.setHeader("Content-Type", "application/json");
+        var request = new HttpPost(url);
+        request.setHeader("Authorization", String.format("Bearer %s", this.apiToken.getPlainText()));
+        request.setHeader("Content-Type", "application/json");
 
         String requestJson = null;
         try {
-            requestJson = MAPPER.writeValueAsString(request);
+            requestJson = MAPPER.writeValueAsString(createBuildRequest);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
-        post.setEntity(new StringEntity(requestJson));
+        request.setEntity(new StringEntity(requestJson));
 
         CloseableHttpResponse response = null;
         try {
-            response = this.httpClient.execute(post);
+            response = this.httpClient.execute(request);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
+        return responseToBuildkiteBuild(response);
+    }
+
+    public BuildkiteBuild getBuild(String organization, String pipeline, int buildNumber) {
+        var url = String.format(
+                "%s/organizations/%s/pipelines/%s/builds/%s",
+                BUILDKITE_API_BASE,
+                organization,
+                pipeline,
+                buildNumber
+        );
+
+        var request = new HttpGet(url);
+        request.setHeader("Authorization", "Bearer " + this.apiToken.getPlainText());
+        request.setHeader("Content-Type", "application/json");
+
+        CloseableHttpResponse response = null;
+        try {
+            response = this.httpClient.execute(request);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return responseToBuildkiteBuild(response);
+    }
+
+    private BuildkiteBuild responseToBuildkiteBuild(CloseableHttpResponse response) {
         BuildkiteBuild build = new BuildkiteBuild();
+
         try {
             JsonNode json = MAPPER.readTree(response.getEntity().getContent());
 

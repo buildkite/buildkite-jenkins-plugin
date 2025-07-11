@@ -81,4 +81,12 @@ public class BuildkiteBuild {
         this.message = message;
         return this;
     }
+
+    public boolean buildFinished() {
+        return "passed".equals(state) || "failed".equals(state) || "canceled".equals(state) || "blocked".equals(state);
+    }
+
+    public boolean buildPassed() {
+        return "passed".equals(state);
+    }
 }
