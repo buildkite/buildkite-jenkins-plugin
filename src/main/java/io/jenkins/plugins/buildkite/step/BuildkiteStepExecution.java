@@ -32,6 +32,7 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
 
         printCreatingBuild(console);
 
+        // TODO: Tighten up this lookup
         StringCredentials credentials = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentialsInItem(
                         StringCredentials.class,

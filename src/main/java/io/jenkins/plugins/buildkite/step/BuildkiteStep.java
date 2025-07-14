@@ -101,7 +101,10 @@ public class BuildkiteStep extends Step {
     public static class DescriptorImpl extends StepDescriptor {
         @Override
         public Set<? extends Class<?>> getRequiredContext() {
-            return Set.of(TaskListener.class, Run.class);
+            return Set.of(
+                    TaskListener.class, // Used in BuildkiteStepExecution.run
+                    Run.class // Used in BuildkiteStep.start
+            );
         }
 
         @Override
