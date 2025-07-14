@@ -17,6 +17,7 @@ import org.jenkinsci.plugins.workflow.steps.SynchronousNonBlockingStepExecution;
 import java.io.PrintStream;
 
 public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<Void> {
+    private static final long serialVersionUID = 1L; // Required for Serializable interface
     private transient final BuildkiteStep step;
 
     public BuildkiteStepExecution(@NonNull BuildkiteStep step, @NonNull StepContext context) {
@@ -54,6 +55,7 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
 
         createBuildRequest.setBranch(this.step.getBranch());
         createBuildRequest.setCommit(this.step.getCommit());
+        createBuildRequest.setMessage(this.step.getMessage());
 
         BuildkiteBuild build = client.createBuild(
                 this.step.getOrganization(),

@@ -21,6 +21,7 @@ public class BuildkiteStep extends Step {
     private final String credentialsId;
     private String branch;
     private String commit;
+    private String message;
 
     @DataBoundConstructor
     public BuildkiteStep(String organization, String pipeline, String credentialsId) {
@@ -38,6 +39,17 @@ public class BuildkiteStep extends Step {
 
     @Override
     public StepExecution start(StepContext context) {
+        if (this.message == null) {
+            try {
+                this.message = String.format(
+                        "Triggered by Jenkins build \"%s\"",
+                        context.get(Run.class).getFullDisplayName()
+                );
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         return new BuildkiteStepExecution(this, context);
     }
 
@@ -50,15 +62,19 @@ public class BuildkiteStep extends Step {
     }
 
     public String getCredentialsId() {
-        return credentialsId;
+        return this.credentialsId;
     }
 
     public String getBranch() {
-        return branch;
+        return this.branch;
     }
 
     public String getCommit() {
-        return commit;
+        return this.commit;
+    }
+
+    public String getMessage() {
+        return message;
     }
 
     @DataBoundSetter
@@ -73,6 +89,11 @@ public class BuildkiteStep extends Step {
         if (commit == null || commit.trim().isEmpty()) return;
 
         this.commit = commit;
+    }
+
+    @DataBoundSetter
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     @Extension
