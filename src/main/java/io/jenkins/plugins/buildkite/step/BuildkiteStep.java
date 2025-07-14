@@ -40,37 +40,38 @@ public class BuildkiteStep extends Step {
     @Override
     public StepExecution start(StepContext context) {
         if (this.message == null) {
+            String fullDisplayName;
+
             try {
-                this.message = String.format(
-                        "Triggered by Jenkins build \"%s\"",
-                        context.get(Run.class).getFullDisplayName()
-                );
+                fullDisplayName = context.get(Run.class).getFullDisplayName();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+
+            this.message = String.format("Triggered by Jenkins build \"%s\"", fullDisplayName);
         }
 
         return new BuildkiteStepExecution(this, context);
     }
 
     public String getOrganization() {
-        return this.organization;
+        return organization;
     }
 
     public String getPipeline() {
-        return this.pipeline;
+        return pipeline;
     }
 
     public String getCredentialsId() {
-        return this.credentialsId;
+        return credentialsId;
     }
 
     public String getBranch() {
-        return this.branch;
+        return branch;
     }
 
     public String getCommit() {
-        return this.commit;
+        return commit;
     }
 
     public String getMessage() {

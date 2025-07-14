@@ -1,4 +1,4 @@
-package io.jenkins.plugins.buildkite.apiclient;
+package io.jenkins.plugins.buildkite.api_client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -67,7 +67,7 @@ public class BuildkiteApiClient {
         );
 
         var request = new HttpGet(url);
-        request.setHeader("Authorization", "Bearer " + this.apiToken.getPlainText());
+        request.setHeader("Authorization", String.format("Bearer %s", this.apiToken.getPlainText()));
         request.setHeader("Content-Type", "application/json");
 
         CloseableHttpResponse response = null;
@@ -81,7 +81,7 @@ public class BuildkiteApiClient {
     }
 
     private BuildkiteBuild responseToBuildkiteBuild(CloseableHttpResponse response) {
-        BuildkiteBuild build = new BuildkiteBuild();
+        var build = new BuildkiteBuild();
 
         try {
             JsonNode json = MAPPER.readTree(response.getEntity().getContent());

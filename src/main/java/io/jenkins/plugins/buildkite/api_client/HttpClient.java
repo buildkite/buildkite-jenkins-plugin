@@ -1,4 +1,4 @@
-package io.jenkins.plugins.buildkite.apiclient;
+package io.jenkins.plugins.buildkite.api_client;
 
 import org.apache.hc.client5.http.config.ConnectionConfig;
 import org.apache.hc.client5.http.config.RequestConfig;

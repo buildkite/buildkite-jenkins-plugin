@@ -1,4 +1,4 @@
-package io.jenkins.plugins.buildkite.apiclient;
+package io.jenkins.plugins.buildkite.api_client;
 
 public class CreateBuildRequest {
     private String commit;
