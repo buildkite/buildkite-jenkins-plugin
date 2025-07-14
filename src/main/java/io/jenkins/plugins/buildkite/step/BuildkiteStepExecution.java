@@ -29,7 +29,7 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
         TaskListener listener = getContext().get(TaskListener.class);
         PrintStream console = listener.getLogger();
 
-        printHello(console);
+        printCreatingBuild(console);
 
         StringCredentials credentials = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentialsInItem(
@@ -50,85 +50,75 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
         }
 
         var client = new BuildkiteApiClient(credentials.getSecret());
-        var request = new CreateBuildRequest();
+        var createBuildRequest = new CreateBuildRequest();
 
-        // TODO: parameterise this
-        request.setCommit("HEAD");
-        request.setBranch("main");
+        createBuildRequest.setBranch(this.step.getBranch());
+        createBuildRequest.setCommit(this.step.getCommit());
 
         BuildkiteBuild build = client.createBuild(
                 this.step.getOrganization(),
                 this.step.getPipeline(),
-                request
+                createBuildRequest
         );
 
-        printBuildTriggered(build, console);
+        printBuildCreated(build, console);
+
+        console.println("Waiting for build to finish");
 
         Thread.sleep(2000);
 
-        BuildkiteBuild buildCheck = null;
-        while (buildCheck == null || !buildCheck.buildFinished()) {
-            buildCheck = client.getBuild(
+        BuildkiteBuild pollingBuild = null;
+        while (pollingBuild == null || !pollingBuild.buildFinished()) {
+            pollingBuild = client.getBuild(
                     this.step.getOrganization(),
                     this.step.getPipeline(),
                     build.getNumber()
             );
-            console.println(String.format("State: %s", buildCheck.getState()));
+            console.println(String.format("  %s", pollingBuild.getState()));
 
-            Thread.sleep(5000);
+            Thread.sleep(7000);
         }
 
-        if (!buildCheck.buildPassed()) {
-            printBuildFailed(buildCheck, console);
-            this.getContext().onFailure(new FlowInterruptedException(Result.FAILURE));
-        } else {
-            printBuildPassed(buildCheck, console);
+        printBuildFinished(pollingBuild, console);
+
+        if (pollingBuild.buildPassed()) {
             this.getContext().onSuccess(build);
+        } else {
+            this.getContext().onFailure(new FlowInterruptedException(Result.FAILURE));
         }
 
         return null;
     }
 
-    private void printHello(PrintStream console) {
-        console.println("Hello Buildkite!");
-        console.println(String.format("Organization: %s", this.step.getOrganization()));
-        console.println(String.format("Pipeline: %s", this.step.getPipeline()));
-        console.println(String.format("Credentials Id: %s", this.step.getCredentialsId()));
+    private void printCreatingBuild(PrintStream console) {
+        var message = String.format("Creating build for %s/%s on %s (%s)",
+                this.step.getOrganization(),
+                this.step.getPipeline(),
+                this.step.getBranch(),
+                this.step.getCommit()
+        );
+        console.println(message);
     }
 
-    private void printBuildTriggered(BuildkiteBuild build, PrintStream console) {
-        console.println("");
-        console.println("Build triggered");
-        console.println(String.format("Id: %s", build.getId()));
-        console.println(String.format("Number: %s", build.getNumber()));
-        console.println(String.format("State: %s", build.getState()));
-        console.println(String.format("Branch: %s", build.getBranch()));
-        console.println(String.format("Commit: %s", build.getCommit()));
-        console.println(String.format("Web Url: %s", build.getWebUrl()));
+    private void printBuildCreated(BuildkiteBuild build, PrintStream console) {
+        console.println(
+                String.format("%s/%s#%s created: %s",
+                        this.step.getOrganization(),
+                        this.step.getPipeline(),
+                        build.getNumber(),
+                        build.getWebUrl()
+                )
+        );
     }
 
-    private void printBuildFailed(BuildkiteBuild build, PrintStream console) {
+    private void printBuildFinished(BuildkiteBuild build, PrintStream console) {
         var message = String.format(
-                "Buildkite build %s/%s#%s failed with state: %s",
+                "%s/%s#%s finished with state: %s",
                 this.step.getOrganization(),
                 this.step.getPipeline(),
                 build.getNumber(),
                 build.getState()
         );
-
-        console.println("");
-        console.println(message);
-    }
-
-    private void printBuildPassed(BuildkiteBuild build, PrintStream console) {
-        var message = String.format(
-                "Buildkite build %s/%s#%s passed",
-                this.step.getOrganization(),
-                this.step.getPipeline(),
-                build.getNumber()
-        );
-
-        console.println("");
         console.println(message);
     }
 }

@@ -8,6 +8,7 @@ import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.jenkinsci.plugins.workflow.steps.StepExecution;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
 import java.util.Set;
 import java.util.logging.Logger;
@@ -18,12 +19,21 @@ public class BuildkiteStep extends Step {
     private final String organization;
     private final String pipeline;
     private final String credentialsId;
+    private String branch;
+    private String commit;
 
     @DataBoundConstructor
     public BuildkiteStep(String organization, String pipeline, String credentialsId) {
+        // Required fields
         this.organization = organization;
         this.pipeline = pipeline;
         this.credentialsId = credentialsId;
+
+        // Required fields with defaults
+        // If specified in the `buildkite(…)`, they are overridden
+        // in the @DataBoundSetter set* methods below.
+        this.branch = "main";
+        this.commit = "HEAD";
     }
 
     @Override
@@ -41,6 +51,28 @@ public class BuildkiteStep extends Step {
 
     public String getCredentialsId() {
         return credentialsId;
+    }
+
+    public String getBranch() {
+        return branch;
+    }
+
+    public String getCommit() {
+        return commit;
+    }
+
+    @DataBoundSetter
+    public void setBranch(String branch) {
+        if (branch == null || branch.trim().isEmpty()) return;
+
+        this.branch = branch;
+    }
+
+    @DataBoundSetter
+    public void setCommit(String commit) {
+        if (commit == null || commit.trim().isEmpty()) return;
+
+        this.commit = commit;
     }
 
     @Extension
