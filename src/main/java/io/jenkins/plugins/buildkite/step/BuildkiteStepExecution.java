@@ -90,7 +90,7 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
 
     private Void waitForBuildCompletion(BuildkiteApiClient client, BuildkiteBuild build, PrintStream console) throws Exception {
         console.println("Waiting for build to finish");
-        Thread.sleep(2000);
+        sleepMillis(2000);
 
         BuildkiteBuild pollingBuild = null;
         while (pollingBuild == null || !pollingBuild.buildFinished()) {
@@ -102,7 +102,7 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
             console.println(String.format("  %s", pollingBuild.getState()));
 
             try {
-                Thread.sleep(7000);
+                sleepMillis(7000);
             } catch (InterruptedException e) {
                 console.println("Wait canceled");
                 this.getContext().onFailure(new FlowInterruptedException(Result.FAILURE));
@@ -130,6 +130,10 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
         }
 
         return null;
+    }
+
+    protected void sleepMillis(long millis) throws InterruptedException {
+        Thread.sleep(millis);
     }
 
     private void printCreatingBuild(PrintStream console) {
