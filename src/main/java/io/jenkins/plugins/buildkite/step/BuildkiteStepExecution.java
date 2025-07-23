@@ -36,6 +36,31 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
 
         printCreatingBuild(console);
 
+        StringCredentials credentials = getCredentials(console);
+        if (credentials == null) {
+            return null;
+        }
+
+        BuildkiteApiClient client = new BuildkiteApiClient(credentials.getSecret());
+        CreateBuildRequest request = createBuildRequest();
+
+        BuildkiteBuild build = client.createBuild(
+                this.step.getOrganization(),
+                this.step.getPipeline(),
+                request
+        );
+
+        printBuildCreated(build, console);
+
+        if (this.step.isAsync()) {
+            this.getContext().onSuccess(build);
+            return null;
+        }
+
+        return waitForBuildCompletion(client, build, console);
+    }
+
+    private StringCredentials getCredentials(PrintStream console) {
         // TODO: Tighten up this lookup
         StringCredentials credentials = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentialsInItem(
@@ -49,34 +74,22 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
         if (credentials == null) {
             var errorMessage = String.format("Could not find Credentials with id: %s", this.step.getCredentialsId());
             console.println(errorMessage);
-
             this.getContext().onFailure(new FlowInterruptedException(Result.FAILURE));
-            return null;
         }
 
-        var client = new BuildkiteApiClient(credentials.getSecret());
-        var createBuildRequest = new CreateBuildRequest();
+        return credentials;
+    }
 
+    private CreateBuildRequest createBuildRequest() {
+        var createBuildRequest = new CreateBuildRequest();
         createBuildRequest.setBranch(this.step.getBranch());
         createBuildRequest.setCommit(this.step.getCommit());
         createBuildRequest.setMessage(this.step.getMessage());
+        return createBuildRequest;
+    }
 
-        BuildkiteBuild build = client.createBuild(
-                this.step.getOrganization(),
-                this.step.getPipeline(),
-                createBuildRequest
-        );
-
-        printBuildCreated(build, console);
-
-        if (this.step.isAsync()) {
-            this.getContext().onSuccess(build);
-
-            return null;
-        }
-
+    private Void waitForBuildCompletion(BuildkiteApiClient client, BuildkiteBuild build, PrintStream console) throws Exception {
         console.println("Waiting for build to finish");
-
         Thread.sleep(2000);
 
         BuildkiteBuild pollingBuild = null;
@@ -92,8 +105,8 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
                 Thread.sleep(7000);
             } catch (InterruptedException e) {
                 console.println("Wait canceled");
-
                 this.getContext().onFailure(new FlowInterruptedException(Result.FAILURE));
+                return null;
             }
 
             this.buildPaused = this.isBuildPaused();
