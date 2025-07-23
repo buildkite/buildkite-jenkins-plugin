@@ -96,7 +96,8 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
                 this.getContext().onFailure(new FlowInterruptedException(Result.FAILURE));
             }
 
-            if (this.buildPaused = this.isBuildPaused()) {
+            this.buildPaused = this.isBuildPaused();
+            if (this.buildPaused) {
                 break;
             }
         }
