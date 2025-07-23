@@ -1,16 +1,29 @@
 package io.jenkins.plugins.buildkite.step;
 
+import hudson.model.Run;
+import org.jenkinsci.plugins.workflow.steps.StepContext;
+import org.jenkinsci.plugins.workflow.steps.StepExecution;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class BuildkiteStepTest {
 
     private BuildkiteStep step;
+    
+    @Mock
+    private StepContext mockContext;
+    
+    @Mock
+    private Run<?, ?> mockRun;
 
     @BeforeEach
     void setUp() {
+        MockitoAnnotations.openMocks(this);
         step = new BuildkiteStep("my-org", "my-pipeline", "creds-id");
     }
 
@@ -105,5 +118,44 @@ class BuildkiteStepTest {
         step.setMessage(customMessage);
 
         assertEquals(customMessage, step.getMessage());
+    }
+
+    @Test
+    void start_withPresetMessage_returnsStepExecution() throws Exception {
+        step.setMessage("Custom message");
+        
+        StepExecution result = step.start(mockContext);
+        
+        assertNotNull(result);
+        assertInstanceOf(BuildkiteStepExecution.class, result);
+        assertEquals("Custom message", step.getMessage());
+        verifyNoInteractions(mockContext);
+    }
+
+    @Test
+    void start_withNullMessage_generatesDefaultMessage() throws Exception {
+        when(mockContext.get(Run.class)).thenReturn(mockRun);
+        when(mockRun.getFullDisplayName()).thenReturn("MyJob #123");
+        
+        StepExecution result = step.start(mockContext);
+        
+        assertNotNull(result);
+        assertInstanceOf(BuildkiteStepExecution.class, result);
+        assertEquals("Triggered by Jenkins build \"MyJob #123\"", step.getMessage());
+        verify(mockContext).get(Run.class);
+        verify(mockRun).getFullDisplayName();
+    }
+
+    @Test
+    void start_withNullMessage_contextThrowsException_throwsRuntimeException() throws Exception {
+        when(mockContext.get(Run.class)).thenThrow(new InterruptedException("Context error"));
+        
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            step.start(mockContext);
+        });
+        
+        assertEquals(InterruptedException.class, exception.getCause().getClass());
+        assertEquals("Context error", exception.getCause().getMessage());
+        verify(mockContext).get(Run.class);
     }
 }
