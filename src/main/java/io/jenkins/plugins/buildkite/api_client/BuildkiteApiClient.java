@@ -12,6 +12,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public class BuildkiteApiClient {
     private static final ObjectMapper MAPPER = new ObjectMapper()
@@ -45,7 +46,7 @@ public class BuildkiteApiClient {
             throw new RuntimeException(e);
         }
 
-        request.setEntity(new StringEntity(requestJson));
+        request.setEntity(new StringEntity(requestJson, StandardCharsets.UTF_8));
 
         try (CloseableHttpResponse response = this.httpClient.execute(request)) {
             return responseToBuildkiteBuild(response);
