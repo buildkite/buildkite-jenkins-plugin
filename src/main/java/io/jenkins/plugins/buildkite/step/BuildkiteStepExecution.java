@@ -51,6 +51,7 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
             console.println(errorMessage);
 
             this.getContext().onFailure(new FlowInterruptedException(Result.FAILURE));
+            return null;
         }
 
         var client = new BuildkiteApiClient(credentials.getSecret());
