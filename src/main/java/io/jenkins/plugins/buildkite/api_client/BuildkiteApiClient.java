@@ -47,14 +47,11 @@ public class BuildkiteApiClient {
 
         request.setEntity(new StringEntity(requestJson));
 
-        CloseableHttpResponse response = null;
-        try {
-            response = this.httpClient.execute(request);
+        try (CloseableHttpResponse response = this.httpClient.execute(request)) {
+            return responseToBuildkiteBuild(response);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        return responseToBuildkiteBuild(response);
     }
 
     public BuildkiteBuild getBuild(String organization, String pipeline, int buildNumber) {
@@ -70,14 +67,11 @@ public class BuildkiteApiClient {
         request.setHeader("Authorization", String.format("Bearer %s", this.apiToken.getPlainText()));
         request.setHeader("Content-Type", "application/json");
 
-        CloseableHttpResponse response = null;
-        try {
-            response = this.httpClient.execute(request);
+        try (CloseableHttpResponse response = this.httpClient.execute(request)) {
+            return responseToBuildkiteBuild(response);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        return responseToBuildkiteBuild(response);
     }
 
     private BuildkiteBuild responseToBuildkiteBuild(CloseableHttpResponse response) {
