@@ -1,15 +1,15 @@
 steps:
   - label: ":maven: Build & Test"
     command: |
-      echo "--- mvn dependency:go-offline -B"
+      echo "--- :maven: mvn dependency:go-offline -B"
       mvn dependency:go-offline -B
-      echo "--- mvn hpi:resolve-test-dependencies -B"
+      echo "--- :maven: mvn hpi:resolve-test-dependencies -B"
       mvn hpi:resolve-test-dependencies -B
-      echo "--- mvn verify"
+      echo "--- :maven: mvn verify"
       mvn verify
 
     plugins:
-      - docker#v5.11.0:
+      - docker#v5.13.0:
           image: "maven:3-eclipse-temurin-22-alpine"
           volumes:
             - ".:/workspace"

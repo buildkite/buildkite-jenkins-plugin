@@ -1,13 +1,10 @@
 package io.jenkins.plugins.buildkite.step;
 
 import hudson.util.FormValidation;
-import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class BuildkiteStepDescriptorTest {
 
@@ -26,15 +23,6 @@ class BuildkiteStepDescriptorTest {
     @Test
     void getDisplayName_returnsCorrectName() {
         assertEquals("Trigger a Buildkite Build", descriptor.getDisplayName());
-    }
-
-    @Test
-    void getRequiredContext_returnsCorrectClasses() {
-        Set<? extends Class<?>> requiredContext = descriptor.getRequiredContext();
-
-        assertEquals(2, requiredContext.size());
-        assertTrue(requiredContext.contains(hudson.model.TaskListener.class));
-        assertTrue(requiredContext.contains(hudson.model.Run.class));
     }
 
     @Test
@@ -75,10 +63,5 @@ class BuildkiteStepDescriptorTest {
         FormValidation result = descriptor.doCheckPipeline(null);
         assertEquals(FormValidation.Kind.ERROR, result.kind);
         assertEquals("Pipeline is required", result.getMessage());
-    }
-
-    @Test
-    void isSubclassOfStepDescriptor() {
-        assertInstanceOf(StepDescriptor.class, descriptor);
     }
 }

@@ -132,6 +132,7 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
         return null;
     }
 
+    // Pulled out so it's easier to override sleep delays in testing
     protected void sleepMillis(long millis) throws InterruptedException {
         Thread.sleep(millis);
     }

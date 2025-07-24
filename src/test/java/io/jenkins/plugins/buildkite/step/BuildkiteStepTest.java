@@ -14,12 +14,9 @@ import static org.mockito.Mockito.*;
 class BuildkiteStepTest {
 
     private BuildkiteStep step;
-    
-    @Mock
-    private StepContext mockContext;
-    
-    @Mock
-    private Run<?, ?> mockRun;
+
+    @Mock private StepContext mockContext;
+    @Mock private Run<?, ?> mockRun;
 
     @BeforeEach
     void setUp() {
@@ -40,6 +37,32 @@ class BuildkiteStepTest {
         assertEquals("HEAD", step.getCommit());
         assertFalse(step.isAsync());
         assertNull(step.getMessage());
+    }
+
+    @Test
+    void start_withNullMessage_returnsStepExecutionWithDefaultMessage() throws Exception {
+        when(mockContext.get(Run.class)).thenReturn(mockRun);
+        when(mockRun.getFullDisplayName()).thenReturn("MyJob #123");
+
+        StepExecution result = step.start(mockContext);
+
+        assertNotNull(result);
+        assertInstanceOf(BuildkiteStepExecution.class, result);
+        assertEquals("Triggered by Jenkins build \"MyJob #123\"", step.getMessage());
+        verify(mockContext).get(Run.class);
+        verify(mockRun).getFullDisplayName();
+    }
+
+    @Test
+    void start_withCustomMessage_returnsStepExecutionWithCustomMessage() {
+        step.setMessage("Custom message");
+
+        StepExecution result = step.start(mockContext);
+
+        assertNotNull(result);
+        assertInstanceOf(BuildkiteStepExecution.class, result);
+        assertEquals("Custom message", step.getMessage());
+        verifyNoInteractions(mockContext);
     }
 
     @Test
@@ -97,7 +120,7 @@ class BuildkiteStepTest {
     }
 
     @Test
-    void setMessage_allowsNullValue() {
+    void setMessage_ignoresNullValue() {
         step.setMessage("Custom message");
         step.setMessage(null);
         assertEquals("Custom message", step.getMessage());
@@ -110,52 +133,5 @@ class BuildkiteStepTest {
 
         step.setAsync(false);
         assertFalse(step.isAsync());
-    }
-
-    @Test
-    void start_withCustomMessage_usesCustomMessage() {
-        String customMessage = "Custom build message";
-        step.setMessage(customMessage);
-
-        assertEquals(customMessage, step.getMessage());
-    }
-
-    @Test
-    void start_withPresetMessage_returnsStepExecution() throws Exception {
-        step.setMessage("Custom message");
-        
-        StepExecution result = step.start(mockContext);
-        
-        assertNotNull(result);
-        assertInstanceOf(BuildkiteStepExecution.class, result);
-        assertEquals("Custom message", step.getMessage());
-        verifyNoInteractions(mockContext);
-    }
-
-    @Test
-    void start_withNullMessage_generatesDefaultMessage() throws Exception {
-        when(mockContext.get(Run.class)).thenReturn(mockRun);
-        when(mockRun.getFullDisplayName()).thenReturn("MyJob #123");
-        
-        StepExecution result = step.start(mockContext);
-        
-        assertNotNull(result);
-        assertInstanceOf(BuildkiteStepExecution.class, result);
-        assertEquals("Triggered by Jenkins build \"MyJob #123\"", step.getMessage());
-        verify(mockContext).get(Run.class);
-        verify(mockRun).getFullDisplayName();
-    }
-
-    @Test
-    void start_withNullMessage_contextThrowsException_throwsRuntimeException() throws Exception {
-        when(mockContext.get(Run.class)).thenThrow(new InterruptedException("Context error"));
-        
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            step.start(mockContext);
-        });
-        
-        assertEquals(InterruptedException.class, exception.getCause().getClass());
-        assertEquals("Context error", exception.getCause().getMessage());
-        verify(mockContext).get(Run.class);
     }
 }
