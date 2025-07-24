@@ -80,8 +80,9 @@ public class BuildkiteApiClient {
 
         if (statusCode < 200 || statusCode >= 400) {
             try {
-                String responseBody = response.getEntity() != null ?
-                        new String(response.getEntity().getContent().readAllBytes(), StandardCharsets.UTF_8) : "";
+                String responseBody = (response.getEntity() != null)
+                        ? new String(response.getEntity().getContent().readAllBytes(), StandardCharsets.UTF_8)
+                        : "";
                 throw new BuildkiteApiException(statusCode, responseBody);
             } catch (IOException e) {
                 throw new BuildkiteApiException(statusCode, "", e);
