@@ -42,12 +42,11 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
         }
 
         BuildkiteApiClient client = new BuildkiteApiClient(credentials.getSecret());
-        CreateBuildRequest request = createBuildRequest();
 
         BuildkiteBuild build = client.createBuild(
                 this.step.getOrganization(),
                 this.step.getPipeline(),
-                request
+                generateCreateBuildRequest()
         );
 
         printBuildCreated(build, console);
@@ -80,7 +79,7 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
         return credentials;
     }
 
-    private CreateBuildRequest createBuildRequest() {
+    private CreateBuildRequest generateCreateBuildRequest() {
         var createBuildRequest = new CreateBuildRequest();
         createBuildRequest.setBranch(this.step.getBranch());
         createBuildRequest.setCommit(this.step.getCommit());
@@ -132,7 +131,7 @@ public class BuildkiteStepExecution extends SynchronousNonBlockingStepExecution<
         return null;
     }
 
-    // Pulled out so it's easier to override sleep delays in testing
+    // Allow sleep delays to be overridden in testing
     protected void sleepMillis(long millis) throws InterruptedException {
         Thread.sleep(millis);
     }

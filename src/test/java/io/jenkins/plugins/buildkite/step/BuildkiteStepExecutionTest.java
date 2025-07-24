@@ -52,8 +52,8 @@ class BuildkiteStepExecutionTest {
     }
 
     @Test
-    void createBuildRequest_setsAllProperties() throws Exception {
-        Method method = BuildkiteStepExecution.class.getDeclaredMethod("createBuildRequest");
+    void generateCreateBuildRequest_setsAllProperties() throws Exception {
+        Method method = BuildkiteStepExecution.class.getDeclaredMethod("generateCreateBuildRequest");
         method.setAccessible(true);
 
         var request = (CreateBuildRequest) method.invoke(stepExecution);
@@ -65,7 +65,7 @@ class BuildkiteStepExecutionTest {
     }
 
     @Test
-    void createBuildRequest_withDifferentStepValues() throws Exception {
+    void generateCreateBuildRequest_withDifferentStepValues() throws Exception {
         var customStep = new BuildkiteStep("custom-org", "custom-pipeline", "custom-creds");
         customStep.setBranch("feature");
         customStep.setCommit("abc123");
@@ -73,7 +73,7 @@ class BuildkiteStepExecutionTest {
 
         var customExecution = new BuildkiteStepExecution(customStep, mockContext);
 
-        Method method = BuildkiteStepExecution.class.getDeclaredMethod("createBuildRequest");
+        Method method = BuildkiteStepExecution.class.getDeclaredMethod("generateCreateBuildRequest");
         method.setAccessible(true);
 
         var request = (CreateBuildRequest) method.invoke(customExecution);
