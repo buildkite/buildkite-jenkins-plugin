@@ -5,12 +5,12 @@ public class CreateBuildRequest {
     private String branch;
     private String message;
 
-    public String getMessage() {
-        return message;
+    public String getCommit() {
+        return commit;
     }
 
-    public CreateBuildRequest setMessage(String message) {
-        this.message = message;
+    public CreateBuildRequest setCommit(String commit) {
+        this.commit = commit;
         return this;
     }
 
@@ -23,12 +23,12 @@ public class CreateBuildRequest {
         return this;
     }
 
-    public String getCommit() {
-        return commit;
+    public String getMessage() {
+        return message;
     }
 
-    public CreateBuildRequest setCommit(String commit) {
-        this.commit = commit;
+    public CreateBuildRequest setMessage(String message) {
+        this.message = message;
         return this;
     }
 }
