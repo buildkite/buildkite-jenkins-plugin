@@ -5,27 +5,30 @@ public class CreateBuildRequest {
     private String branch;
     private String message;
 
-    public String getCommit() {
-        return commit;
+    public String getMessage() {
+        return message;
     }
 
-    public void setCommit(String commit) {
-        this.commit = commit;
+    public CreateBuildRequest setMessage(String message) {
+        this.message = message;
+        return this;
     }
 
     public String getBranch() {
         return branch;
     }
 
-    public void setBranch(String branch) {
+    public CreateBuildRequest setBranch(String branch) {
         this.branch = branch;
+        return this;
     }
 
-    public String getMessage() {
-        return message;
+    public String getCommit() {
+        return commit;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public CreateBuildRequest setCommit(String commit) {
+        this.commit = commit;
+        return this;
     }
 }
