@@ -5,6 +5,7 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.HttpEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,6 @@ class BuildkiteApiClientTest {
     void constructor_setsApiToken() {
         try (MockedStatic<HttpClient> mockedHttpClient = mockStatic(HttpClient.class)) {
             mockedHttpClient.when(HttpClient::getCloseableHttpClient).thenReturn(mockHttpClient);
-
             client = new BuildkiteApiClient(mockSecret);
 
             assertNotNull(client);
@@ -50,9 +50,6 @@ class BuildkiteApiClientTest {
     @Test
     void createBuild_success_returnsBuildkiteBuild() throws Exception {
         try (MockedStatic<HttpClient> mockedHttpClient = mockStatic(HttpClient.class)) {
-            mockedHttpClient.when(HttpClient::getCloseableHttpClient).thenReturn(mockHttpClient);
-            client = new BuildkiteApiClient(mockSecret);
-
             String responseJson = """
                     {
                       "id": "2d841f58-6dd6-44f9-94ff-06d4ec7a6a0f",
@@ -65,10 +62,7 @@ class BuildkiteApiClientTest {
                     }
                     """;
 
-            when(mockResponse.getCode()).thenReturn(201);
-            when(mockResponse.getEntity()).thenReturn(mockEntity);
-            when(mockEntity.getContent()).thenReturn(new ByteArrayInputStream(responseJson.getBytes(StandardCharsets.UTF_8)));
-            when(mockHttpClient.execute(any(HttpPost.class))).thenReturn(mockResponse);
+            client = mockClientReturningHttpResponse(mockedHttpClient, 201, responseJson);
 
             CreateBuildRequest request = new CreateBuildRequest();
             request.setCommit("abc123def");
@@ -93,14 +87,8 @@ class BuildkiteApiClientTest {
     @Test
     void createBuild_apiError_throwsBuildkiteApiException() throws Exception {
         try (MockedStatic<HttpClient> mockedHttpClient = mockStatic(HttpClient.class)) {
-            mockedHttpClient.when(HttpClient::getCloseableHttpClient).thenReturn(mockHttpClient);
-            client = new BuildkiteApiClient(mockSecret);
-
             String errorResponseBody = "Pipeline not found";
-            when(mockResponse.getCode()).thenReturn(404);
-            when(mockResponse.getEntity()).thenReturn(mockEntity);
-            when(mockEntity.getContent()).thenReturn(new ByteArrayInputStream(errorResponseBody.getBytes(StandardCharsets.UTF_8)));
-            when(mockHttpClient.execute(any(HttpPost.class))).thenReturn(mockResponse);
+            client = mockClientReturningHttpResponse(mockedHttpClient, 404, errorResponseBody);
 
             CreateBuildRequest request = new CreateBuildRequest();
             request.setCommit("abc123def");
@@ -119,10 +107,7 @@ class BuildkiteApiClientTest {
     @Test
     void createBuild_ioException_throwsRuntimeException() throws Exception {
         try (MockedStatic<HttpClient> mockedHttpClient = mockStatic(HttpClient.class)) {
-            mockedHttpClient.when(HttpClient::getCloseableHttpClient).thenReturn(mockHttpClient);
-            client = new BuildkiteApiClient(mockSecret);
-
-            when(mockHttpClient.execute(any(HttpPost.class))).thenThrow(new IOException("Network error"));
+            client = mockClientThrowingIOException(mockedHttpClient, "Network error");
 
             CreateBuildRequest request = new CreateBuildRequest();
             request.setCommit("abc123def");
@@ -141,9 +126,6 @@ class BuildkiteApiClientTest {
     @Test
     void getBuild_success_returnsBuildkiteBuild() throws Exception {
         try (MockedStatic<HttpClient> mockedHttpClient = mockStatic(HttpClient.class)) {
-            mockedHttpClient.when(HttpClient::getCloseableHttpClient).thenReturn(mockHttpClient);
-            client = new BuildkiteApiClient(mockSecret);
-
             String responseJson = """
                     {
                       "id": "46e39f6d-0647-4ecb-9d4d-09f5cf780502",
@@ -156,10 +138,7 @@ class BuildkiteApiClientTest {
                     }
                     """;
 
-            when(mockResponse.getCode()).thenReturn(200);
-            when(mockResponse.getEntity()).thenReturn(mockEntity);
-            when(mockEntity.getContent()).thenReturn(new ByteArrayInputStream(responseJson.getBytes(StandardCharsets.UTF_8)));
-            when(mockHttpClient.execute(any(HttpGet.class))).thenReturn(mockResponse);
+            client = mockClientReturningHttpResponse(mockedHttpClient, 200, responseJson);
 
             BuildkiteBuild result = client.getBuild("my-org", "my-pipeline", 99);
 
@@ -179,14 +158,7 @@ class BuildkiteApiClientTest {
     @Test
     void getBuild_notFound_throwsBuildkiteApiException() throws Exception {
         try (MockedStatic<HttpClient> mockedHttpClient = mockStatic(HttpClient.class)) {
-            mockedHttpClient.when(HttpClient::getCloseableHttpClient).thenReturn(mockHttpClient);
-            client = new BuildkiteApiClient(mockSecret);
-
-            String errorResponseBody = "Build not found";
-            when(mockResponse.getCode()).thenReturn(404);
-            when(mockResponse.getEntity()).thenReturn(mockEntity);
-            when(mockEntity.getContent()).thenReturn(new ByteArrayInputStream(errorResponseBody.getBytes(StandardCharsets.UTF_8)));
-            when(mockHttpClient.execute(any(HttpGet.class))).thenReturn(mockResponse);
+            client = mockClientReturningHttpResponse(mockedHttpClient, 404, "Build not found");
 
             BuildkiteApiException exception = assertThrows(BuildkiteApiException.class, () -> {
                 client.getBuild("my-org", "my-pipeline", 999);
@@ -200,10 +172,7 @@ class BuildkiteApiClientTest {
     @Test
     void getBuild_ioException_throwsRuntimeException() throws Exception {
         try (MockedStatic<HttpClient> mockedHttpClient = mockStatic(HttpClient.class)) {
-            mockedHttpClient.when(HttpClient::getCloseableHttpClient).thenReturn(mockHttpClient);
-            client = new BuildkiteApiClient(mockSecret);
-
-            when(mockHttpClient.execute(any(HttpGet.class))).thenThrow(new IOException("Connection timeout"));
+            client = mockClientThrowingIOException(mockedHttpClient, "Connection timeout");
 
             RuntimeException exception = assertThrows(RuntimeException.class, () -> {
                 client.getBuild("my-org", "my-pipeline", 123);
@@ -217,14 +186,7 @@ class BuildkiteApiClientTest {
     @Test
     void handleResponse_serverError_throwsBuildkiteApiException() throws Exception {
         try (MockedStatic<HttpClient> mockedHttpClient = mockStatic(HttpClient.class)) {
-            mockedHttpClient.when(HttpClient::getCloseableHttpClient).thenReturn(mockHttpClient);
-            client = new BuildkiteApiClient(mockSecret);
-
-            String errorResponseBody = "Internal server error";
-            when(mockResponse.getCode()).thenReturn(500);
-            when(mockResponse.getEntity()).thenReturn(mockEntity);
-            when(mockEntity.getContent()).thenReturn(new ByteArrayInputStream(errorResponseBody.getBytes(StandardCharsets.UTF_8)));
-            when(mockHttpClient.execute(any(HttpPost.class))).thenReturn(mockResponse);
+            client = mockClientReturningHttpResponse(mockedHttpClient, 500, "Internal server error");
 
             CreateBuildRequest request = new CreateBuildRequest();
             request.setCommit("abc123def");
@@ -243,12 +205,7 @@ class BuildkiteApiClientTest {
     @Test
     void handleResponse_nullResponseBody_throwsBuildkiteApiExceptionWithEmptyBody() throws Exception {
         try (MockedStatic<HttpClient> mockedHttpClient = mockStatic(HttpClient.class)) {
-            mockedHttpClient.when(HttpClient::getCloseableHttpClient).thenReturn(mockHttpClient);
-            client = new BuildkiteApiClient(mockSecret);
-
-            when(mockResponse.getCode()).thenReturn(400);
-            when(mockResponse.getEntity()).thenReturn(null);
-            when(mockHttpClient.execute(any(HttpPost.class))).thenReturn(mockResponse);
+            client = mockClientReturningHttpResponseWithNullEntity(mockedHttpClient, 400);
 
             CreateBuildRequest request = new CreateBuildRequest();
             request.setCommit("abc123def");
@@ -262,5 +219,34 @@ class BuildkiteApiClientTest {
             assertEquals(400, exception.getStatusCode());
             assertEquals("", exception.getResponseBody());
         }
+    }
+
+    private BuildkiteApiClient mockClientReturningHttpResponse(MockedStatic<HttpClient> mockedHttpClient, int statusCode, String responseBody) throws IOException {
+        mockedHttpClient.when(HttpClient::getCloseableHttpClient).thenReturn(mockHttpClient);
+
+        when(mockResponse.getCode()).thenReturn(statusCode);
+        when(mockResponse.getEntity()).thenReturn(mockEntity);
+        when(mockEntity.getContent()).thenReturn(new ByteArrayInputStream(responseBody.getBytes(StandardCharsets.UTF_8)));
+        when(mockHttpClient.execute(any(ClassicHttpRequest.class))).thenReturn(mockResponse);
+
+        return new BuildkiteApiClient(mockSecret);
+    }
+
+    private BuildkiteApiClient mockClientThrowingIOException(MockedStatic<HttpClient> mockedHttpClient, String errorMessage) throws IOException {
+        mockedHttpClient.when(HttpClient::getCloseableHttpClient).thenReturn(mockHttpClient);
+
+        when(mockHttpClient.execute(any(ClassicHttpRequest.class))).thenThrow(new IOException(errorMessage));
+
+        return new BuildkiteApiClient(mockSecret);
+    }
+
+    private BuildkiteApiClient mockClientReturningHttpResponseWithNullEntity(MockedStatic<HttpClient> mockedHttpClient, int statusCode) throws IOException {
+        mockedHttpClient.when(HttpClient::getCloseableHttpClient).thenReturn(mockHttpClient);
+
+        when(mockResponse.getCode()).thenReturn(statusCode);
+        when(mockResponse.getEntity()).thenReturn(null);
+        when(mockHttpClient.execute(any(ClassicHttpRequest.class))).thenReturn(mockResponse);
+
+        return new BuildkiteApiClient(mockSecret);
     }
 }
